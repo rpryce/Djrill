@@ -143,9 +143,16 @@ class DjrillIndexView(DjrillApiMixin, TemplateView):
     template_name = "djrill/status.html"
 
     def get(self, request, *args, **kwargs):
+        subaccount = getattr(settings, "MANDRILL_SUBACCOUNT", None)
+        api_uri = "/users/info.json"
+        payload_dict = {"key": self.api_key}
 
-        payload = json.dumps({"key": self.api_key})
-        req = requests.post("%s/users/info.json" % self.api_url, data=payload)
+        if subaccount is not None:
+            api_uri = "/subaccounts/info.json"
+            payload_dict.update({"id": subaccount})
+
+        payload = json.dumps(payload_dict)
+        req = requests.post("%s%s" % (self.api_url, api_uri), data=payload)
 
         return self.render_to_response({"status": json.loads(req.text)})
 
